@@ -60,6 +60,8 @@ function renderFundRow(fund, estimateData) {
 
   const direction = changePercent >= 0 ? 'up' : 'down';
   const profitDirection = profit.amount >= 0 ? 'up' : 'down';
+  const hasProfit = fund.costPrice && fund.shares;
+
   const row = document.createElement('tr');
   row.className = 'fund-row';
   row.dataset.code = fund.code;
@@ -71,6 +73,12 @@ function renderFundRow(fund, estimateData) {
     </td>
     <td class="col-nav ${direction}">${currentNav.toFixed(4)}</td>
     <td class="col-change ${direction}">${changePercent >= 0 ? '+' : ''}${changePercent.toFixed(2)}%</td>
+    ${hasProfit ? `
+    <td class="col-profit ${profitDirection}">
+      ${profit.amount >= 0 ? '+' : ''}¥${profit.amount.toFixed(2)}
+      <span class="profit-pct">(${profit.percent >= 0 ? '+' : ''}${profit.percent.toFixed(2)}%)</span>
+    </td>
+    ` : '<td class="col-profit empty">--</td>'}
   `;
 
   row.addEventListener('click', () => showDetail(fund));
@@ -113,8 +121,9 @@ async function loadFundList() {
     fundList.innerHTML = `
       <table class="fund-table">
         <colgroup>
-          <col style="width:68%">
-          <col style="width:12%">
+          <col style="width:52%">
+          <col style="width:14%">
+          <col style="width:14%">
           <col style="width:20%">
         </colgroup>
         <thead>
@@ -122,6 +131,7 @@ async function loadFundList() {
             <th>基金名称</th>
             <th>净值</th>
             <th>涨跌幅</th>
+            <th>持仓收益</th>
           </tr>
         </thead>
         <tbody id="fund-tbody"></tbody>
@@ -152,7 +162,7 @@ async function loadFundList() {
             <div class="name-text">${fund.name || '--'}</div>
             <div class="code-text">${fund.code}</div>
           </td>
-          <td colspan="2" class="col-error">数据获取失败</td>
+          <td colspan="3" class="col-error">数据获取失败</td>
         `;
         tbody.appendChild(errorRow);
       }
@@ -207,8 +217,8 @@ async function showDetail(fund) {
       <span class="${changeDirection}">${changePercent >= 0 ? '+' : ''}${changePercent.toFixed(2)}%</span>
     `;
 
-    document.getElementById('detail-cost').textContent = fund.costPrice ? `¥${fund.costPrice.toFixed(4)}` : '未设置';
-    document.getElementById('detail-shares').textContent = fund.shares || '未设置';
+    document.getElementById('detail-cost').value = fund.costPrice || '';
+    document.getElementById('detail-shares').value = fund.shares || '';
 
     const profitDirection = profit.amount >= 0 ? 'up' : 'down';
     document.getElementById('detail-profit').innerHTML = `
@@ -337,7 +347,6 @@ async function loadHistoryChart(fundCode, period) {
  */
 async function addFund() {
   const codeInput = document.getElementById('fund-code');
-  const nameInput = document.getElementById('fund-name');
   const costInput = document.getElementById('cost-price');
   const sharesInput = document.getElementById('shares');
   const thresholdInput = document.getElementById('alert-threshold');
@@ -351,12 +360,9 @@ async function addFund() {
   }
 
   try {
-    // 获取基金名称
-    let name = nameInput.value;
-    if (!name) {
-      const estimateData = await FundAPI.fetchFundEstimate(code);
-      name = estimateData.name;
-    }
+    // 自动获取基金名称
+    const estimateData = await FundAPI.fetchFundEstimate(code);
+    const name = estimateData.name;
 
     // 添加到存储
     await FundStorage.addFund({
@@ -372,7 +378,6 @@ async function addFund() {
 
     // 清空表单
     codeInput.value = '';
-    nameInput.value = '';
     costInput.value = '';
     sharesInput.value = '';
     thresholdInput.value = '2.0';
@@ -420,19 +425,6 @@ function initEventListeners() {
   // 确认添加按钮
   document.getElementById('btn-confirm').addEventListener('click', addFund);
 
-  // 基金代码输入时自动获取名称
-  document.getElementById('fund-code').addEventListener('blur', async (e) => {
-    const code = e.target.value.trim();
-    if (code && /^\d{6}$/.test(code)) {
-      try {
-        const estimateData = await FundAPI.fetchFundEstimate(code);
-        document.getElementById('fund-name').value = estimateData.name;
-      } catch (error) {
-        console.error('获取基金名称失败:', error);
-      }
-    }
-  });
-
   // 刷新按钮
   document.getElementById('btn-refresh').addEventListener('click', async () => {
     const btn = document.getElementById('btn-refresh');
@@ -461,6 +453,20 @@ function initEventListeners() {
   document.getElementById('btn-delete').addEventListener('click', () => {
     if (currentFundCode) {
       deleteFund(currentFundCode);
+    }
+  });
+
+  // 保存持仓信息
+  document.getElementById('btn-save-detail').addEventListener('click', async () => {
+    if (!currentFundCode) return;
+    const cost = parseFloat(document.getElementById('detail-cost').value) || 0;
+    const shares = parseFloat(document.getElementById('detail-shares').value) || 0;
+    try {
+      await FundStorage.updateFund(currentFundCode, { costPrice: cost, shares: shares });
+      document.getElementById('dialog-detail').style.display = 'none';
+      await loadFundList();
+    } catch (error) {
+      alert(error.message);
     }
   });
 

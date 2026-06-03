@@ -16,7 +16,7 @@ body {
 .container {
   width: 500px;
   min-height: 300px;
-  max-height: 620px;
+  max-height: 600px;
   display: flex;
   flex-direction: column;
 }
@@ -133,6 +133,9 @@ body {
 }
 .col-nav { text-align: right; font-weight: 600; font-size: 13px; }
 .col-change { text-align: right; font-weight: 600; font-size: 13px; }
+.col-profit { text-align: right; font-size: 12px; }
+.profit-pct { color: #999; font-size: 11px; }
+.col-profit.empty { color: #ccc; }
 
 .col-error {
   text-align: center;
@@ -214,16 +217,16 @@ body {
 .dialog-content {
   background: white;
   border-radius: 12px;
-  padding: 24px;
+  padding: 20px;
   width: 90%;
   max-width: 360px;
-  max-height: 80vh;
+  max-height: 90vh;
   overflow-y: auto;
 }
 
 .dialog-content h2 {
-  font-size: 18px;
-  margin-bottom: 20px;
+  font-size: 16px;
+  margin-bottom: 12px;
   color: #333;
 }
 
@@ -259,8 +262,8 @@ body {
 .dialog-actions {
   display: flex;
   justify-content: flex-end;
-  gap: 12px;
-  margin-top: 20px;
+  gap: 10px;
+  margin-top: 12px;
 }
 
 .btn-primary {
@@ -312,6 +315,8 @@ body {
 .detail-content {
   max-width: 520px;
   width: 95%;
+  max-height: 90vh;
+  overflow-y: auto;
 }
 
 .detail-content .chart-section canvas {
@@ -320,13 +325,14 @@ body {
 }
 
 .detail-info {
-  margin-bottom: 20px;
+  margin-bottom: 12px;
 }
 
 .info-row {
   display: flex;
   justify-content: space-between;
-  padding: 6px 0;
+  align-items: center;
+  padding: 5px 0;
   border-bottom: 1px solid #f0f0f0;
   font-size: 13px;
 }
@@ -335,18 +341,32 @@ body {
   color: #666;
 }
 
+.inline-input {
+  width: 120px;
+  padding: 4px 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 13px;
+  text-align: right;
+}
+
+.inline-input:focus {
+  outline: none;
+  border-color: #667eea;
+}
+
 .chart-section {
-  margin-top: 16px;
+  margin-top: 10px;
 }
 
 .chart-section canvas {
-  max-height: 200px;
+  max-height: 160px;
 }
 
 .chart-tabs {
   display: flex;
-  gap: 8px;
-  margin-bottom: 12px;
+  gap: 6px;
+  margin-bottom: 8px;
 }
 
 .tab {
