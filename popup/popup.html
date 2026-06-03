@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>基金净值监控</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="container">
+    <!-- 头部 -->
+    <header class="header">
+      <h1>基金净值监控</h1>
+      <button id="btn-add" class="btn-icon" title="添加基金">+</button>
+    </header>
+
+    <!-- 基金列表 -->
+    <div id="fund-list" class="fund-list">
+      <!-- 基金卡片将通过JS动态生成 -->
+      <div class="empty-state" id="empty-state">
+        <p>暂无监控的基金</p>
+        <p class="hint">点击 + 添加基金</p>
+      </div>
+    </div>
+
+    <!-- 汇总信息 -->
+    <footer class="footer" id="footer" style="display: none;">
+      <div class="summary">
+        <span class="label">总资产:</span>
+        <span id="total-assets" class="value">¥0.00</span>
+      </div>
+      <div class="summary">
+        <span class="label">总收益:</span>
+        <span id="total-profit" class="value">¥0.00 (0.00%)</span>
+      </div>
+      <div class="actions">
+        <button id="btn-refresh" class="btn-text" title="刷新数据">刷新</button>
+        <button id="btn-settings" class="btn-text" title="设置">设置</button>
+      </div>
+    </footer>
+  </div>
+
+  <!-- 添加基金对话框 -->
+  <div id="dialog-add" class="dialog" style="display: none;">
+    <div class="dialog-content">
+      <h2>添加基金</h2>
+      <div class="form-group">
+        <label for="fund-code">基金代码</label>
+        <input type="text" id="fund-code" placeholder="输入6位基金代码" maxlength="6" pattern="[0-9]{6}">
+      </div>
+      <div class="form-group">
+        <label for="fund-name">基金名称</label>
+        <input type="text" id="fund-name" placeholder="自动获取或手动输入" readonly>
+      </div>
+      <div class="form-group">
+        <label for="cost-price">持仓成本价</label>
+        <input type="number" id="cost-price" placeholder="买入时的净值" step="0.0001" min="0">
+      </div>
+      <div class="form-group">
+        <label for="shares">持有份额</label>
+        <input type="number" id="shares" placeholder="持有的基金份额" step="0.01" min="0">
+      </div>
+      <div class="form-group">
+        <label for="alert-threshold">涨跌提醒阈值(%)</label>
+        <input type="number" id="alert-threshold" placeholder="涨跌幅超过此值时提醒" step="0.1" min="0" value="2.0">
+      </div>
+      <div class="dialog-actions">
+        <button id="btn-cancel" class="btn-secondary">取消</button>
+        <button id="btn-confirm" class="btn-primary">确认添加</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 基金详情对话框 -->
+  <div id="dialog-detail" class="dialog" style="display: none;">
+    <div class="dialog-content detail-content">
+      <h2 id="detail-title">基金详情</h2>
+      <div class="detail-info">
+        <div class="info-row">
+          <span class="label">基金代码:</span>
+          <span id="detail-code"></span>
+        </div>
+        <div class="info-row">
+          <span class="label">基金名称:</span>
+          <span id="detail-name"></span>
+        </div>
+        <div class="info-row">
+          <span class="label">当前净值:</span>
+          <span id="detail-nav"></span>
+        </div>
+        <div class="info-row">
+          <span class="label">估算净值:</span>
+          <span id="detail-estimate"></span>
+        </div>
+        <div class="info-row">
+          <span class="label">估算涨跌:</span>
+          <span id="detail-change"></span>
+        </div>
+        <div class="info-row">
+          <span class="label">持仓成本:</span>
+          <span id="detail-cost"></span>
+        </div>
+        <div class="info-row">
+          <span class="label">持有份额:</span>
+          <span id="detail-shares"></span>
+        </div>
+        <div class="info-row">
+          <span class="label">持仓收益:</span>
+          <span id="detail-profit"></span>
+        </div>
+      </div>
+
+      <!-- 历史图表 -->
+      <div class="chart-section">
+        <div class="chart-tabs">
+          <button class="tab active" data-period="1w">1周</button>
+          <button class="tab" data-period="1m">1月</button>
+          <button class="tab" data-period="3m">3月</button>
+          <button class="tab" data-period="1y">1年</button>
+          <button class="tab" data-period="all">全部</button>
+        </div>
+        <canvas id="history-chart"></canvas>
+      </div>
+
+      <div class="dialog-actions">
+        <button id="btn-delete" class="btn-danger">删除</button>
+        <button id="btn-close" class="btn-secondary">关闭</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 加载Chart.js -->
+  <script src="../lib/chart.min.js"></script>
+  <!-- 加载工具模块 -->
+  <script src="../utils/api.js"></script>
+  <script src="../utils/storage.js"></script>
+  <script src="../utils/notification.js"></script>
+  <!-- 加载popup逻辑 -->
+  <script src="popup.js"></script>
+</body>
+</html>
