@@ -49,6 +49,27 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   }
 });
 
+// 点击扩展图标时打开独立窗口
+chrome.action.onClicked.addListener(async () => {
+  // 检查是否已有窗口打开
+  const windows = await chrome.windows.getAll({ type: 'popup' });
+  const existingWindow = windows.find(w => w.title === '基金净值监控');
+
+  if (existingWindow) {
+    // 如果已有窗口，聚焦到该窗口
+    await chrome.windows.update(existingWindow.id, { focused: true });
+  } else {
+    // 创建新窗口
+    await chrome.windows.create({
+      url: chrome.runtime.getURL('popup/popup.html'),
+      type: 'popup',
+      width: 700,
+      height: 650,
+      focused: true
+    });
+  }
+});
+
 // 设置定时任务
 chrome.alarms.create('refreshFunds', {
   periodInMinutes: 30 // 每30分钟刷新一次
