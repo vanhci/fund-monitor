@@ -97,7 +97,8 @@ body {
 
 .fund-table th:nth-child(2),
 .fund-table th:nth-child(3),
-.fund-table th:nth-child(4) {
+.fund-table th:nth-child(4),
+.fund-table th:nth-child(5) {
   text-align: right;
 }
 
@@ -133,6 +134,7 @@ body {
 }
 .col-nav { text-align: right; font-weight: 600; font-size: 13px; }
 .col-change { text-align: right; font-weight: 600; font-size: 13px; }
+.col-today { text-align: right; font-size: 12px; font-weight: 500; }
 .col-profit { text-align: right; font-size: 12px; }
 .profit-pct { color: #999; font-size: 11px; }
 .col-profit.empty { color: #ccc; }

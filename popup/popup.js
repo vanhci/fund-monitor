@@ -48,6 +48,21 @@ function calculateProfit(fund, currentNav) {
 }
 
 /**
+ * 计算今日持仓收益
+ *
+ * @param {Object} fund - 基金对象
+ * @param {number} estimateNav - 估算净值
+ * @param {number} yesterdayNav - 昨日净值
+ * @returns {number} 今日收益金额
+ */
+function calculateTodayProfit(fund, estimateNav, yesterdayNav) {
+  if (!fund.shares || !estimateNav || !yesterdayNav) {
+    return 0;
+  }
+  return fund.shares * (estimateNav - yesterdayNav);
+}
+
+/**
  * 渲染基金列表行
  *
  * @param {Object} fund - 基金对象
@@ -57,10 +72,13 @@ function renderFundRow(fund, estimateData) {
   const currentNav = estimateData.estimateNav || estimateData.nav;
   const changePercent = estimateData.estimateChange || 0;
   const profit = calculateProfit(fund, currentNav);
+  const todayProfit = calculateTodayProfit(fund, estimateData.estimateNav, estimateData.nav);
 
   const direction = changePercent >= 0 ? 'up' : 'down';
   const profitDirection = profit.amount >= 0 ? 'up' : 'down';
+  const todayProfitDirection = todayProfit >= 0 ? 'up' : 'down';
   const hasProfit = fund.costPrice && fund.shares;
+  const hasTodayProfit = fund.shares && estimateData.estimateNav && estimateData.nav;
 
   const row = document.createElement('tr');
   row.className = 'fund-row';
@@ -73,6 +91,7 @@ function renderFundRow(fund, estimateData) {
     </td>
     <td class="col-nav ${direction}">${currentNav.toFixed(4)}</td>
     <td class="col-change ${direction}">${changePercent >= 0 ? '+' : ''}${changePercent.toFixed(2)}%</td>
+    <td class="col-today ${todayProfitDirection}">${hasTodayProfit ? (todayProfit >= 0 ? '+' : '') + '¥' + todayProfit.toFixed(2) : '--'}</td>
     ${hasProfit ? `
     <td class="col-profit ${profitDirection}">
       ${profit.amount >= 0 ? '+' : ''}¥${profit.amount.toFixed(2)}
@@ -116,21 +135,24 @@ async function loadFundList() {
 
     let totalAssets = 0;
     let totalCost = 0;
+    let totalTodayProfit = 0;
 
     // 创建表格结构
     fundList.innerHTML = `
       <table class="fund-table">
         <colgroup>
-          <col style="width:52%">
-          <col style="width:14%">
-          <col style="width:14%">
-          <col style="width:20%">
+          <col style="width:36%">
+          <col style="width:13%">
+          <col style="width:13%">
+          <col style="width:16%">
+          <col style="width:22%">
         </colgroup>
         <thead>
           <tr>
             <th>基金名称</th>
             <th>净值</th>
             <th>涨跌幅</th>
+            <th>今日收益</th>
             <th>持仓收益</th>
           </tr>
         </thead>
@@ -151,6 +173,7 @@ async function loadFundList() {
         if (fund.shares) {
           totalAssets += currentNav * fund.shares;
           totalCost += fund.costPrice * fund.shares;
+          totalTodayProfit += calculateTodayProfit(fund, estimateData.estimateNav, estimateData.nav);
         }
       } catch (error) {
         console.error(`加载基金 ${fund.code} 失败:`, error);
@@ -172,8 +195,14 @@ async function loadFundList() {
     const totalProfit = totalAssets - totalCost;
     const totalProfitPercent = totalCost > 0 ? (totalProfit / totalCost) * 100 : 0;
     const profitDirection = totalProfit >= 0 ? 'up' : 'down';
+    const todayProfitDirection = totalTodayProfit >= 0 ? 'up' : 'down';
 
     document.getElementById('total-assets').textContent = `¥${totalAssets.toFixed(2)}`;
+    document.getElementById('total-today-profit').innerHTML = `
+      <span class="${todayProfitDirection}">
+        ${totalTodayProfit >= 0 ? '+' : ''}¥${totalTodayProfit.toFixed(2)}
+      </span>
+    `;
     document.getElementById('total-profit').innerHTML = `
       <span class="${profitDirection}">
         ${totalProfit >= 0 ? '+' : ''}¥${totalProfit.toFixed(2)} (${totalProfitPercent >= 0 ? '+' : ''}${totalProfitPercent.toFixed(2)}%)
