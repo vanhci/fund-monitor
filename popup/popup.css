@@ -14,8 +14,8 @@ body {
 }
 
 .container {
-  width: 500px;
-  min-height: 300px;
+  width: 600px;
+  min-height: 400px;
   max-height: 600px;
   display: flex;
   flex-direction: column;
@@ -119,7 +119,9 @@ body {
 }
 
 /* 列宽分配 */
-.col-name { }
+.col-name {
+  max-width: 0;
+}
 .name-text {
   font-size: 12px;
   font-weight: 500;
@@ -135,8 +137,17 @@ body {
 .col-nav { text-align: right; font-weight: 600; font-size: 13px; }
 .col-change { text-align: right; font-weight: 600; font-size: 13px; }
 .col-today { text-align: right; font-size: 12px; font-weight: 500; }
-.col-profit { text-align: right; font-size: 12px; }
-.profit-pct { color: #999; font-size: 11px; }
+.col-profit {
+  text-align: right;
+  font-size: 12px;
+  white-space: normal;
+  word-break: break-all;
+}
+.profit-pct {
+  display: block;
+  color: #999;
+  font-size: 11px;
+}
 .col-profit.empty { color: #ccc; }
 
 .col-error {

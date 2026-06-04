@@ -141,11 +141,11 @@ async function loadFundList() {
     fundList.innerHTML = `
       <table class="fund-table">
         <colgroup>
-          <col style="width:36%">
-          <col style="width:13%">
-          <col style="width:13%">
+          <col style="width:32%">
+          <col style="width:12%">
+          <col style="width:12%">
           <col style="width:16%">
-          <col style="width:22%">
+          <col style="width:28%">
         </colgroup>
         <thead>
           <tr>
