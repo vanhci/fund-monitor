@@ -52,8 +52,8 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 // 点击扩展图标时打开独立窗口
 chrome.action.onClicked.addListener(async () => {
   // 检查是否已有窗口打开
-  const windows = await chrome.windows.getAll({ type: 'popup' });
-  const existingWindow = windows.find(w => w.title === '基金净值监控');
+  const windows = await chrome.windows.getAll();
+  const existingWindow = windows.find(w => w.type === 'popup');
 
   if (existingWindow) {
     // 如果已有窗口，聚焦到该窗口
