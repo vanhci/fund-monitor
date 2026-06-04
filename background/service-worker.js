@@ -2,46 +2,12 @@
  * 后台服务脚本
  *
  * 主要职责：
- * - 处理来自popup的消息请求（获取基金数据）
  * - 定时刷新基金数据
  * - 检查涨跌并发送通知
  */
 
 // 导入工具模块
 importScripts('../utils/api.js', '../utils/storage.js', '../utils/notification.js');
-
-// 请求头配置
-const REQUEST_HEADERS = {
-  'Referer': 'https://fundf10.eastmoney.com/',
-  'Accept': '*/*'
-};
-
-/**
- * 发送带重试的fetch请求
- *
- * @param {string} url - 请求URL
- * @param {number} maxRetries - 最大重试次数
- * @returns {Promise<string>} 响应文本
- */
-async function fetchWithRetry(url, maxRetries = 3) {
-  for (let i = 0; i < maxRetries; i++) {
-    try {
-      const response = await fetch(url, {
-        headers: REQUEST_HEADERS
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}`);
-      }
-
-      return await response.text();
-    } catch (error) {
-      if (i === maxRetries - 1) throw error;
-      // 指数退避
-      await new Promise(resolve => setTimeout(resolve, 1000 * (i + 1)));
-    }
-  }
-}
 
 /**
  * 刷新所有基金数据并检查通知
@@ -73,38 +39,8 @@ async function refreshAllFunds() {
   }
 }
 
-// 监听来自popup的消息
+// 监听手动刷新消息
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-  // 处理估算净值请求
-  if (request.action === 'fetchEstimate') {
-    fetchWithRetry(request.url)
-      .then(data => sendResponse({ success: true, data }))
-      .catch(error => sendResponse({ success: false, error: error.message }));
-    return true; // 保持消息通道开放
-  }
-
-  // 处理历史净值请求
-  if (request.action === 'fetchHistory') {
-    fetchWithRetry(request.url)
-      .then(text => {
-        console.log('[历史净值] 原始响应:', text.substring(0, 500));
-        try {
-          const data = JSON.parse(text);
-          console.log('[历史净值] 解析结果:', JSON.stringify(data).substring(0, 500));
-          sendResponse({ success: true, data });
-        } catch (e) {
-          console.error('[历史净值] JSON解析失败:', e, '原始文本:', text.substring(0, 200));
-          sendResponse({ success: false, error: 'JSON解析失败: ' + text.substring(0, 100) });
-        }
-      })
-      .catch(error => {
-        console.error('[历史净值] 请求失败:', error);
-        sendResponse({ success: false, error: error.message });
-      });
-    return true;
-  }
-
-  // 处理手动刷新请求
   if (request.action === 'refreshAll') {
     refreshAllFunds()
       .then(() => sendResponse({ success: true }))

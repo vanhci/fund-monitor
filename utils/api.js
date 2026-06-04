@@ -12,9 +12,39 @@ const API_CONFIG = {
   estimateUrl: 'https://fundgz.1234567.com.cn/js/',
   // 历史净值接口
   historyUrl: 'https://api.fund.eastmoney.com/f10/lsjz',
-  // 请求头Referer
-  referer: 'https://fundf10.eastmoney.com/'
+  // 请求头配置
+  headers: {
+    'Referer': 'https://fundf10.eastmoney.com/',
+    'Accept': '*/*'
+  }
 };
+
+/**
+ * 发送带重试的fetch请求
+ *
+ * @param {string} url - 请求URL
+ * @param {number} maxRetries - 最大重试次数
+ * @returns {Promise<string>} 响应文本
+ */
+async function fetchWithRetry(url, maxRetries = 3) {
+  for (let i = 0; i < maxRetries; i++) {
+    try {
+      const response = await fetch(url, {
+        headers: API_CONFIG.headers
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+
+      return await response.text();
+    } catch (error) {
+      if (i === maxRetries - 1) throw error;
+      // 指数退避
+      await new Promise(resolve => setTimeout(resolve, 1000 * (i + 1)));
+    }
+  }
+}
 
 /**
  * 解析JSONP响应，提取JSON数据
@@ -45,37 +75,27 @@ function parseJSONP(text) {
 async function fetchFundEstimate(fundCode) {
   const url = `${API_CONFIG.estimateUrl}${fundCode}.js`;
 
-  return new Promise((resolve, reject) => {
-    // 通过background script发送请求，避免CORS限制
-    chrome.runtime.sendMessage(
-      { action: 'fetchEstimate', url },
-      response => {
-        if (chrome.runtime.lastError) {
-          reject(new Error(chrome.runtime.lastError.message));
-          return;
-        }
+  try {
+    const text = await fetchWithRetry(url);
+    const data = parseJSONP(text);
 
-        if (response.success) {
-          const data = parseJSONP(response.data);
-          if (data) {
-            resolve({
-              code: data.fundcode,
-              name: data.name,
-              navDate: data.jzrq,        // 净值日期
-              nav: parseFloat(data.dwjz), // 单位净值
-              estimateNav: parseFloat(data.gsz), // 估算净值
-              estimateChange: parseFloat(data.gszzl), // 估算涨跌幅
-              estimateTime: data.gztime   // 估算时间
-            });
-          } else {
-            reject(new Error('数据解析失败'));
-          }
-        } else {
-          reject(new Error(response.error));
-        }
-      }
-    );
-  });
+    if (!data) {
+      throw new Error('数据解析失败');
+    }
+
+    return {
+      code: data.fundcode,
+      name: data.name,
+      navDate: data.jzrq,        // 净值日期
+      nav: parseFloat(data.dwjz), // 单位净值
+      estimateNav: parseFloat(data.gsz), // 估算净值
+      estimateChange: parseFloat(data.gszzl), // 估算涨跌幅
+      estimateTime: data.gztime   // 估算时间
+    };
+  } catch (error) {
+    console.error(`获取基金 ${fundCode} 估值失败:`, error);
+    throw error;
+  }
 }
 
 /**
@@ -91,39 +111,29 @@ async function fetchFundHistory(fundCode, pageSize = 30, pageIndex = 1) {
   const safePageSize = Math.min(pageSize, 40);
   const url = `${API_CONFIG.historyUrl}?fundCode=${fundCode}&pageIndex=${pageIndex}&pageSize=${safePageSize}`;
 
-  return new Promise((resolve, reject) => {
-    chrome.runtime.sendMessage(
-      { action: 'fetchHistory', url },
-      response => {
-        if (chrome.runtime.lastError) {
-          reject(new Error(chrome.runtime.lastError.message));
-          return;
-        }
+  try {
+    const text = await fetchWithRetry(url);
+    const data = JSON.parse(text);
 
-        if (response.success) {
-          const data = response.data;
-          // Data可能为空字符串（请求量过大或无数据时）
-          if (data.Data && typeof data.Data === 'object' && data.Data.LSJZList) {
-            const history = data.Data.LSJZList.map(item => ({
-              date: item.FSRQ,
-              nav: parseFloat(item.DWJZ),
-              totalNav: parseFloat(item.LJJZ),
-              changePercent: parseFloat(item.JZZZL)
-            }));
-            resolve(history);
-          } else {
-            // 返回空数组而不是抛错，让调用方处理
-            resolve([]);
-          }
-        } else {
-          reject(new Error(response.error));
-        }
-      }
-    );
-  });
+    // Data可能为空字符串（请求量过大或无数据时）
+    if (data.Data && typeof data.Data === 'object' && data.Data.LSJZList) {
+      return data.Data.LSJZList.map(item => ({
+        date: item.FSRQ,
+        nav: parseFloat(item.DWJZ),
+        totalNav: parseFloat(item.LJJZ),
+        changePercent: parseFloat(item.JZZZL)
+      }));
+    }
+
+    // 返回空数组而不是抛错，让调用方处理
+    return [];
+  } catch (error) {
+    console.error(`获取基金 ${fundCode} 历史数据失败:`, error);
+    throw error;
+  }
 }
 
-// 导出API函数（兼容浏览器和Service Worker）
+// 导出API函数
 globalThis.FundAPI = {
   fetchFundEstimate,
   fetchFundHistory
