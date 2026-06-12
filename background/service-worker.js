@@ -1,4 +1,4 @@
-/**
+﻿/**
  * 后台服务脚本
  *
  * 主要职责：
@@ -86,3 +86,4 @@ chrome.alarms.onAlarm.addListener((alarm) => {
 chrome.runtime.onInstalled.addListener(() => {
   console.log('基金净值监控插件已安装');
 });
+

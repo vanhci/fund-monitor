@@ -7,7 +7,7 @@
 // 当前查看的基金代码
 let currentFundCode = null;
 // Chart.js实例
-let chartInstance = null;
+let historyChartInstance = null;
 
 /**
  * 判断当前是否为交易时段
@@ -309,12 +309,12 @@ async function loadHistoryChart(fundCode, period) {
     const values = history.map(item => item.nav).reverse();
 
     // 销毁旧图表
-    if (chartInstance) {
-      chartInstance.destroy();
+    if (historyChartInstance) {
+      historyChartInstance.destroy();
     }
 
     // 创建新图表
-    chartInstance = new Chart(ctx, {
+    historyChartInstance = new Chart(ctx, {
       type: 'line',
       data: {
         labels: dates,
@@ -520,3 +520,4 @@ document.addEventListener('DOMContentLoaded', () => {
   initEventListeners();
   loadFundList();
 });
+
